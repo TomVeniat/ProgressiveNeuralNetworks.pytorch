@@ -13,7 +13,7 @@ def get_permuted_MNIST(path, batch_size):
     rand_perm = RandomPermutation(0, 0, im_width, im_height)
     normalization = transforms.Normalize((0.1307,), (0.3081,))
 
-    #Todo: rethink RandomPermutation usage slows down dataloading by a factor > 6, Should ty directly on batches.
+    #Todo: rethink RandomPermutation usage slows down dataloading by a factor > 6, Should try directly on batches.
     transfrom = transforms.Compose([
         transforms.ToTensor(),
         rand_perm,
