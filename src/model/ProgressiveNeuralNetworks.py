@@ -29,22 +29,24 @@ class PNN(nn.Module):
     def __init__(self, n_layers):
         super(PNN, self).__init__()
         self.n_layers = n_layers
-
         self.columns = nn.ModuleList([])
 
-    def forward(self, x):
+        self.use_cuda = False
+
+    def forward(self, x, task_id=-1):
         assert self.columns, 'PNN should at least have one column (missing call to `new_task` ?)'
         inputs = [c[0](x) for c in self.columns]
 
         for l in range(1, self.n_layers):
-            # print('Layer {:d}'.format(l))
             outputs = []
+
+            #TODO: Use task_id to check if all columns are necessary
             for i, column in enumerate(self.columns):
-                # print('\tcolumn {:d}, feeding {:d} inputs'.format(i, len(inputs[:i+1])))
                 outputs.append(column[l](inputs[:i+1]))
+
             inputs = outputs
 
-        return inputs[-1]
+        return inputs[task_id]
 
     def new_task(self, sizes):
         msg = "Should have the out size for each layer + input size (got {} sizes but {} layers)."
@@ -56,6 +58,9 @@ class PNN(nn.Module):
             modules.append(PNNLinearBlock(task_id, i, sizes[i], sizes[i+1]))
         new_column = nn.ModuleList(modules)
         self.columns.append(new_column)
+
+        if self.use_cuda:
+            self.cuda()
 
     def freeze_columns(self, skip=None):
         if skip == None:
@@ -70,3 +75,12 @@ class PNN(nn.Module):
         if col is None:
             return super(PNN, self).parameters()
         return self.columns[col].parameters()
+
+    def cuda(self, *args, **kwargs):
+        self.use_cuda = True
+        super(PNN, self).cuda(*args, **kwargs)
+
+    def cpu(self):
+        self.use_cuda = False
+        super(PNN, self).cpu()
+
