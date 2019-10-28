@@ -10,8 +10,8 @@ def evaluate_model(model, x, y, dataset_loader, **kwargs):
         x.resize_(images.size()).copy_(images)
         y.resize_(labels.size()).copy_(labels)
 
-        inputs = Variable(x.view(x.size(0), -1), volatile=True)
-        preds = model(inputs, **kwargs)
+        with torch.no_grad():
+            preds = model(x.view(x.size(0), -1), **kwargs)
 
         _, predicted = torch.max(preds.data, 1)
 

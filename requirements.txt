@@ -1,0 +1,5 @@
+visdom
+tqdm
+numpy
+pytorch
+torchvision

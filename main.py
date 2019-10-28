@@ -24,10 +24,10 @@ logger.setLevel(logging.DEBUG)
 
 def get_args():
     parser = argparse.ArgumentParser(description='Progressive Neural Networks')
-    parser.add_argument('-path', default='/local/veniat/data', type=str, help='path to the data')
+    parser.add_argument('-path', default='/local/veniat/data/vision', type=str, help='path to the data')
     parser.add_argument('-cuda', default=-1, type=int, help='Cuda device to use (-1 for none)')
-    parser.add_argument('-visdom_url', default="http://37.187.126.101", type=str, help='Visdom server url')
-    parser.add_argument('-visdom_port', default=8100, type=int, help='Visdom server port')
+    parser.add_argument('-visdom_url', default="localhost", type=str, help='Visdom server url')
+    parser.add_argument('-visdom_port', default=8097, type=int, help='Visdom server port')
 
     parser.add_argument('--layers', metavar='L', type=int, default=3, help='Number of layers per task')
     parser.add_argument('--sizes', dest='sizes', default=[784, 1024, 512, 10], nargs='+',
@@ -90,7 +90,7 @@ def main(args):
                 correct_samples += (predicted == y).sum()
 
                 indiv_loss = F.cross_entropy(predictions, Variable(y))
-                total_loss += indiv_loss.data[0]
+                total_loss += indiv_loss.item()
 
                 optimizer.zero_grad()
                 indiv_loss.backward()
