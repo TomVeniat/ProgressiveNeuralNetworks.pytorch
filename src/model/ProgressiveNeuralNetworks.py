@@ -4,25 +4,38 @@ import torch.nn.functional as F
 
 
 class PNNLinearBlock(nn.Module):
-    def __init__(self, col, depth, n_in, n_out):
+    def __init__(self, in_sizes, out_size, scalar_mult=1.0):
         super(PNNLinearBlock, self).__init__()
-        self.col = col
-        self.depth = depth
-        self.n_in = n_in
-        self.n_out = n_out
-        self.w = nn.Linear(n_in, n_out)
+        assert isinstance(in_sizes, (list, tuple))
+        self.in_sizes = in_sizes
+        self.w = nn.Linear(in_sizes[-1], out_size)
 
-        self.u = nn.ModuleList()
-        if self.depth > 0:
-            self.u.extend([nn.Linear(n_in, n_out) for _ in range(col)])
+        self.v = nn.ModuleList()
+        self.alphas = nn.ParameterList()
+        for in_size in in_sizes[:-1]:
+            new_alpha = torch.tensor([scalar_mult])#.expand(in_size)
+            self.alphas.append(nn.Parameter(new_alpha))
+            self.v.append(nn.Linear(in_size, out_size))
+        if len(in_sizes) > 1:
+            self.u = nn.Linear(out_size, out_size)
+        else:
+            self.u = None
 
     def forward(self, inputs):
         if not isinstance(inputs, list):
             inputs = [inputs]
         cur_column_out = self.w(inputs[-1])
-        prev_columns_out = [mod(x) for mod, x in zip(self.u, inputs)]
 
-        return F.relu(cur_column_out + sum(prev_columns_out))
+        # prev_columns_out = [mod(x) for mod, x in zip(self.u, inputs)]
+        prev_columns_out = []
+        for x, alpha, v in zip(inputs, self.alphas, self.v):
+            prev_columns_out.append(v(alpha * x))
+        prev_columns_out = sum(prev_columns_out)
+
+        if self.u:
+            prev_columns_out = self.u(F.relu(prev_columns_out))
+
+        return F.relu(cur_column_out + prev_columns_out)
 
 
 class PNN(nn.Module):
@@ -55,7 +68,7 @@ class PNN(nn.Module):
 
         modules = []
         for i in range(0, self.n_layers):
-            modules.append(PNNLinearBlock(task_id, i, sizes[i], sizes[i+1]))
+            modules.append(PNNLinearBlock([sizes[i]]*(task_id + 1), sizes[i+1]))
         new_column = nn.ModuleList(modules)
         self.columns.append(new_column)
 

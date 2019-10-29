@@ -16,12 +16,14 @@ def get_permuted_MNIST(path, batch_size):
     #Todo: rethink RandomPermutation usage slows down dataloading by a factor > 6, Should try directly on batches.
     transfrom = transforms.Compose([
         transforms.ToTensor(),
-        rand_perm,
+        # rand_perm,
         normalization]
     )
 
     train_set = MNIST(root=path, train=True, download=True, transform=transfrom)
     test_set = MNIST(root=path, train=False, download=True, transform=transfrom)
+    train_set.data = rand_perm(train_set.data)
+    test_set.data = rand_perm(test_set.data)
     train_set, val_set = validation_split(train_set, transfrom, transfrom, val_size=val_size)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True) if train_set is not None else None
@@ -49,7 +51,7 @@ class RandomPermutation(object):
         return rand_perm_(input, self.x_off, self.y_off, self.x_max, self.y_max, self.kernel)
 
 
-def rand_perm_(img, x, y, x_max, y_max, kernel):
+def rand_perm_(data, x, y, x_max, y_max, kernel):
     """
     Applies INPLACE the random permutation defined in `kernel` to the image `img` on
     the zone defined by `x`, `y`, `x_max`, `y_max`
@@ -61,6 +63,11 @@ def rand_perm_(img, x, y, x_max, y_max, kernel):
     :param kernel: LongTensor of dim 1 containing one value for each point in the zone to permute
     :return: teh permuted image (even if the permutation is done inplace).
     """
-    zone = img[:, x:x_max, y:y_max].contiguous()
-    img[:, x:x_max, y:y_max] = zone.view(img.size(0), -1).index_select(1, kernel).view(zone.size())
-    return img
+    if data.dim() == 3:
+        zone = data[:, x:x_max, y:y_max].contiguous()
+        data[:, x:x_max, y:y_max] = zone.view(data.size(0), -1).index_select(-1, kernel).view(zone.size())
+    else:
+        raise NotImplementedError('NoNoNo')
+        zone = data[:, :, x:x_max, y:y_max].contiguous()
+        data[:, :, x:x_max, y:y_max] = zone.view(data.size(0), data.size(1), -1).index_select(-1, kernel).view(zone.size())
+    return data

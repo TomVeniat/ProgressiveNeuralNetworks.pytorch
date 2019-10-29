@@ -1,5 +1,4 @@
 import torch
-from torch.autograd import Variable
 from tqdm import tqdm
 
 
@@ -16,6 +15,6 @@ def evaluate_model(model, x, y, dataset_loader, **kwargs):
         _, predicted = torch.max(preds.data, 1)
 
         total += labels.size(0)
-        correct += (predicted == y).sum()
+        correct += (predicted == y).sum().item()
 
     return 100 * correct / total
