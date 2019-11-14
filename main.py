@@ -38,15 +38,15 @@ def get_args():
                         nargs='+',
                         action=LengthCheckAction)
 
-    parser.add_argument('--n_tasks', dest='n_tasks', type=int, default=5)
-    parser.add_argument('--epochs', dest='epochs', type=int, default=10)
+    parser.add_argument('--n_tasks', dest='n_tasks', type=int, default=15)
+    parser.add_argument('--epochs', dest='epochs', type=int, default=15)
     parser.add_argument('--bs', dest='batch_size', type=int, default=64)
-    parser.add_argument('--lr', dest='lr', type=float, default=1e-3,
+    parser.add_argument('--lr', dest='lr', type=float, default=1e-4,
                         help='Optimizer learning rate')
-    parser.add_argument('--wd', dest='wd', type=float, default=1e-4,
+    parser.add_argument('--wd', dest='wd', type=float, default=1e-5,
                         help='Optimizer weight decay')
     parser.add_argument('--momentum', dest='momentum', type=float,
-                        default=1e-4, help='Optimizer momentum')
+                        default=0.9, help='Optimizer momentum')
 
     args = parser.parse_known_args()
     return args[0]

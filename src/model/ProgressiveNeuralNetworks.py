@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class PNNLinearBlock(nn.Module):
     def __init__(self, in_sizes, out_size, scalar_mult=1.0):
         super(PNNLinearBlock, self).__init__()
@@ -31,11 +30,9 @@ class PNNLinearBlock(nn.Module):
         for x, alpha, v in zip(inputs, self.alphas, self.v):
             prev_columns_out.append(v(alpha * x))
         prev_columns_out = sum(prev_columns_out)
-
         if self.u:
             prev_columns_out = self.u(F.relu(prev_columns_out))
-
-        return F.relu(cur_column_out + prev_columns_out)
+        return cur_column_out + prev_columns_out
 
 
 class PNN(nn.Module):
@@ -51,8 +48,8 @@ class PNN(nn.Module):
         inputs = [c[0](x) for c in self.columns]
 
         for l in range(1, self.n_layers):
+            inputs = list(map(F.relu, inputs))
             outputs = []
-
             #TODO: Use task_id to check if all columns are necessary
             for i, column in enumerate(self.columns):
                 outputs.append(column[l](inputs[:i+1]))
@@ -67,8 +64,10 @@ class PNN(nn.Module):
         task_id = len(self.columns)
 
         modules = []
-        for i in range(0, self.n_layers):
-            modules.append(PNNLinearBlock([sizes[i]]*(task_id + 1), sizes[i+1]))
+        modules.append(PNNLinearBlock([sizes[0]], sizes[1]))
+        for i in range(1, self.n_layers):
+            new_block = PNNLinearBlock([sizes[i]]*(task_id + 1), sizes[i+1])
+            modules.append(new_block)
         new_column = nn.ModuleList(modules)
         self.columns.append(new_column)
 
